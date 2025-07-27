@@ -1,0 +1,137 @@
+<div class="container">
+  <div class="row">
+    <div class="col-md-12">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><%= link_to 'Flux RSS', feeds_path %></li>
+          <li class="breadcrumb-item active"><%= @feed.title %></li>
+        </ol>
+      </nav>
+
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1><%= @feed.title %></h1>
+        <div>
+          <span class="badge badge-primary"><%= @feed.unread_items_count %> non lus</span>
+        </div>
+      </div>
+
+      <p class="text-muted"><%= @feed.url %></p>
+
+      <% if @feed_items.any? %>
+        <div class="feed-items">
+          <% @feed_items.each do |item| %>
+            <div class="card mb-3 feed-item <%= 'unread' unless item.read %>" id="feed-item-<%= item.id %>">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div class="flex-grow-1">
+                    <h5 class="card-title">
+                      <%= link_to item.title, item.url, target: '_blank', class: 'text-decoration-none' %>
+                      <% unless item.read %>
+                        <span class="badge badge-warning">Nouveau</span>
+                      <% end %>
+                    </h5>
+                    
+                    <% if item.summary.present? %>
+                      <p class="card-text"><%= truncate(item.summary, length: 200) %></p>
+                    <% end %>
+                    
+                    <div class="text-muted small">
+                      <% if item.published_at %>
+                        Publié le <%= item.published_at.strftime('%d/%m/%Y à %H:%M') %>
+                      <% end %>
+                    </div>
+                  </div>
+                  
+                  <div class="ml-3">
+                    <button class="btn btn-sm <%= item.read ? 'btn-outline-secondary' : 'btn-success' %> toggle-read-btn"
+                            data-item-id="<%= item.id %>"
+                            data-url="<%= toggle_read_feed_item_path(item) %>">
+                      <%= item.read ? 'Marquer non lu' : 'Marquer lu' %>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+
+        <!-- Pagination simple -->
+        <div class="d-flex justify-content-center">
+          <% if @feed_items.respond_to?(:current_page) %>
+            <nav>
+              <ul class="pagination">
+                <% if @feed_items.current_page > 1 %>
+                  <li class="page-item">
+                    <%= link_to 'Précédent', feed_path(@feed, page: @feed_items.current_page - 1), class: 'page-link' %>
+                  </li>
+                <% end %>
+                
+                <li class="page-item active">
+                  <span class="page-link">Page <%= @feed_items.current_page %></span>
+                </li>
+                
+                <% if @feed_items.current_page < @feed_items.total_pages %>
+                  <li class="page-item">
+                    <%= link_to 'Suivant', feed_path(@feed, page: @feed_items.current_page + 1), class: 'page-link' %>
+                  </li>
+                <% end %>
+              </ul>
+            </nav>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="alert alert-info">
+          Aucun article trouvé pour ce flux. Les articles apparaîtront après la première récupération automatique.
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Gestion des boutons de changement de statut
+  document.querySelectorAll('.toggle-read-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var itemId = this.dataset.itemId;
+      var url = this.dataset.url;
+      var card = document.getElementById('feed-item-' + itemId);
+      
+      fetch(url, {
+        method: 'POST',
+        headers: {
+          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
+          'Accept': 'application/json'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.read) {
+          card.classList.remove('unread');
+          this.textContent = 'Marquer non lu';
+          this.className = 'btn btn-sm btn-outline-secondary toggle-read-btn';
+        } else {
+          card.classList.add('unread');
+          this.textContent = 'Marquer lu';
+          this.className = 'btn btn-sm btn-success toggle-read-btn';
+        }
+        
+        // Mettre à jour le compteur de non lus
+        updateUnreadCount();
+      })
+      .catch(error => {
+        console.error('Erreur:', error);
+        alert('Erreur lors du changement de statut');
+      });
+    });
+  });
+  
+  function updateUnreadCount() {
+    var unreadItems = document.querySelectorAll('.feed-item.unread');
+    var badge = document.querySelector('.badge-primary');
+    if (badge) {
+      badge.textContent = unreadItems.length + ' non lus';
+    }
+  }
+});
+</script> 
