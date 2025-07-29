@@ -69,7 +69,7 @@ const FeedList = () => {
           onClick={handleFetchAll}
           disabled={loading}
         >
-          🔄 Récupérer les flux
+          Récupérer les flux
         </button>
       </div>
 

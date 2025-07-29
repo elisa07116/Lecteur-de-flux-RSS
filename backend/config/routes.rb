@@ -15,6 +15,13 @@ Rails.application.routes.draw do
           end
         end
       end
+      
+      # Route alternative pour toggle_read sans feed_id
+      resources :feed_items, only: [] do
+        member do
+          post :toggle_read
+        end
+      end
     end
   end
 
