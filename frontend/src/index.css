@@ -7,65 +7,9 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f8f9fa;
 }
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
-}
-
-.feed-item {
-  transition: all 0.3s ease;
-  border-left: 4px solid transparent;
-}
-
-.feed-item.unread {
-  border-left-color: #007bff;
-  background-color: #f8f9ff;
-}
-
-.feed-item:hover {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  transform: translateY(-1px);
-}
-
-.card-title a {
-  color: #333;
-  text-decoration: none;
-}
-
-.card-title a:hover {
-  color: #007bff;
-}
-
-.badge {
-  font-size: 0.75em;
-}
-
-.btn-toggle-read {
-  transition: all 0.2s ease;
-}
-
-.btn-toggle-read:hover {
-  transform: scale(1.05);
-}
-
-.loading-spinner {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 200px;
-}
-
-.error-message {
-  color: #dc3545;
-  text-align: center;
-  padding: 20px;
-}
-
-.success-message {
-  color: #28a745;
-  text-align: center;
-  padding: 20px;
 } 

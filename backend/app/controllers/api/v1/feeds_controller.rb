@@ -14,7 +14,6 @@ class Api::V1::FeedsController < Api::V1::BaseController
     @feed = Feed.new(feed_params)
     
     if @feed.save
-      # Déclencher automatiquement la récupération des articles
       begin
         RssFetcherService.fetch_feed(@feed)
       rescue => e
@@ -42,9 +41,16 @@ class Api::V1::FeedsController < Api::V1::BaseController
 
   def fetch_all
     begin
-      RssFetcherService.fetch_all_feeds
-      render json: { message: 'Récupération des flux terminée' }
+      Rails.logger.info "🚀 Début de l'action fetch_all"
+      result = RssFetcherService.fetch_all_feeds
+      Rails.logger.info "✅ Action fetch_all terminée avec succès"
+      render json: { 
+        message: 'Récupération des flux terminée',
+        processed: result[:processed],
+        errors: result[:errors]
+      }
     rescue => e
+      Rails.logger.error "❌ Erreur dans fetch_all: #{e.message}"
       render json: { error: e.message }, status: :internal_server_error
     end
   end

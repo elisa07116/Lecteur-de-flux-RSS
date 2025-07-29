@@ -71,7 +71,6 @@ function App() {
     try {
       const response = await feedItemsAPI.toggleRead(itemId);
       
-      // Mettre à jour l'état local
       setFeedItems(prevItems => {
         const newItems = { ...prevItems };
         Object.keys(newItems).forEach(feedId => {
@@ -90,9 +89,7 @@ function App() {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer ce flux RSS ?')) {
       try {
         await feedsAPI.delete(feedId);
-        // Supprimer le flux de la liste
         setFeeds(prevFeeds => prevFeeds.filter(feed => feed.id !== feedId));
-        // Supprimer les articles du flux
         setFeedItems(prevItems => {
           const newItems = { ...prevItems };
           delete newItems[feedId];
@@ -108,12 +105,16 @@ function App() {
   const handleFetchAll = async () => {
     try {
       setLoading(true);
-      await feedsAPI.fetchAll();
-      await fetchFeeds(); // Recharger les flux après la récupération
-      await fetchFeedItems(); // Recharger les articles
+      
+      const response = await feedsAPI.fetchAll();
+      console.log('✅ Réponse du serveur:', response.data);
+      
+      await fetchFeeds();
+      await fetchFeedItems();
+      
+      alert('Flux RSS récupérés avec succès !');
     } catch (err) {
-      console.error('Error fetching RSS feeds:', err);
-      alert('Erreur lors de la récupération des flux RSS');
+      alert(`Erreur lors de la récupération des flux RSS: ${err.response?.data?.error || err.message}`);
     } finally {
       setLoading(false);
     }
@@ -157,7 +158,6 @@ function App() {
 
   return (
     <div className="App">
-      {/* Section d'ajout de flux */}
       {showAddForm && (
         <div className="add-feed-section">
           <form onSubmit={handleAddFeed} className="add-feed-form">
@@ -186,7 +186,6 @@ function App() {
         </div>
       )}
 
-      {/* Boutons d'action */}
       <div className="action-buttons-container">
         <div className="left-buttons">
           <button 
@@ -207,7 +206,6 @@ function App() {
         </div>
       </div>
 
-      {/* Contenu principal - deux colonnes */}
       <div className="main-content">
         {feeds.length === 0 ? (
           <div className="empty-state">
@@ -262,7 +260,6 @@ function App() {
                   ))}
                 </div>
                 
-                {/* Pagination pour ce flux */}
                 {pagination[feed.id] && pagination[feed.id].total_pages > 1 && (
                   <div className="feed-pagination">
                     <nav aria-label={`Pagination pour ${feed.title}`}>

@@ -5,7 +5,6 @@ class Api::V1::FeedItemsController < Api::V1::BaseController
     @feed = Feed.find(params[:feed_id])
     @feed_items = @feed.feed_items.recent
     
-    # Pagination
     page = (params[:page] || 1).to_i
     per_page = (params[:per_page] || 5).to_i
     offset = (page - 1) * per_page
