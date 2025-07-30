@@ -1,5 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { feedsAPI, feedItemsAPI } from './services/api';
+import AddFeedForm from './components/AddFeedForm';
+import ActionButtons from './components/ActionButtons';
+import FeedColumn from './components/FeedColumn';
 import './App.css';
 
 function App() {
@@ -10,16 +13,6 @@ function App() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newFeed, setNewFeed] = useState({ title: '', url: '' });
   const [currentPages, setCurrentPages] = useState({});
-
-  useEffect(() => {
-    fetchFeeds();
-  }, []);
-
-  useEffect(() => {
-    if (feeds.length > 0) {
-      fetchFeedItems();
-    }
-  }, [feeds, currentPages]);
 
   const fetchFeeds = async () => {
     try {
@@ -33,7 +26,7 @@ function App() {
     }
   };
 
-  const fetchFeedItems = async () => {
+  const fetchFeedItems = useCallback(async () => {
     try {
       const itemsPromises = feeds.map(feed => {
         const currentPage = currentPages[feed.id] || 1;
@@ -53,7 +46,17 @@ function App() {
     } catch (err) {
       console.error('Error fetching feed items:', err);
     }
-  };
+  }, [feeds, currentPages]);
+
+  useEffect(() => {
+    fetchFeeds();
+  }, []);
+
+  useEffect(() => {
+    if (feeds.length > 0) {
+      fetchFeedItems();
+    }
+  }, [fetchFeedItems, feeds.length]);
 
   const handleAddFeed = async (e) => {
     e.preventDefault();
@@ -127,24 +130,7 @@ function App() {
     }));
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Date inconnue';
-    
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) {
-        return 'Date invalide';
-      }
-      return date.toLocaleDateString('fr-FR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      });
-    } catch (error) {
-      console.error('Erreur de formatage de date:', error, dateString);
-      return 'Date invalide';
-    }
-  };
+
 
   if (loading) {
     return (
@@ -158,147 +144,46 @@ function App() {
 
   return (
     <div className="App">
-      {showAddForm && (
-        <div className="add-feed-section">
-          <form onSubmit={handleAddFeed} className="add-feed-form">
-            <div className="form-group">
-              <label>Titre du flux</label>
-              <input
-                type="text"
-                value={newFeed.title}
-                onChange={(e) => setNewFeed({...newFeed, title: e.target.value})}
-                className="form-control"
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>Url du flux</label>
-              <input
-                type="url"
-                value={newFeed.url}
-                onChange={(e) => setNewFeed({...newFeed, url: e.target.value})}
-                className="form-control"
-                required
-              />
-            </div>
-            <button type="submit" className="btn btn-primary">Ok</button>
-          </form>
-        </div>
-      )}
-
-      <div className="action-buttons-container">
-        <div className="left-buttons">
-          <button 
-            className="btn btn-secondary fetch-feeds-btn"
-            onClick={handleFetchAll}
-            disabled={loading}
-          >
-            Récupérer les flux
-          </button>
-        </div>
-        <div className="right-buttons">
-          <button 
-            className="btn btn-primary add-feed-btn"
-            onClick={() => setShowAddForm(!showAddForm)}
-          >
-            Ajouter un flux
-          </button>
-        </div>
-      </div>
-
       <div className="main-content">
-        {feeds.length === 0 ? (
-          <div className="empty-state">
-            <h3>Aucun flux RSS ajouté</h3>
-            <p>Commencez par ajouter votre premier flux RSS pour voir les articles.</p>
-          </div>
-        ) : (
-          <div className="feeds-container">
-            {feeds.map((feed, index) => (
-              <div key={feed.id} className="feed-column">
-                <div className="feed-header">
-                  <h2 className="feed-title">{feed.title}</h2>
-                  <button
-                    className="delete-feed-btn"
-                    onClick={() => handleDeleteFeed(feed.id)}
-                    title="Supprimer ce flux"
-                  >
-                    🗑️
-                  </button>
-                </div>
-                <div className="feed-items">
-                  {(feedItems[feed.id] || []).map((item) => (
-                    <div key={item.id} className={`feed-item ${!item.read ? 'unread' : ''}`}>
-                      <div className="item-header">
-                        <h3 className="item-title">
-                          <a href={item.url} target="_blank" rel="noopener noreferrer">
-                            {item.title}
-                          </a>
-                        </h3>
-                        <div className="item-date">
-                          {formatDate(item.published_at || item.created_at)}
-                        </div>
-                      </div>
-                      <div className="item-summary">
-                        {item.summary ? 
-                          (item.summary.length > 150 ? 
-                            `${item.summary.substring(0, 150)}...` : 
-                            item.summary
-                          ) : 
-                          'Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam...'
-                        }
-                      </div>
-                      <div className="item-footer">
-                        <button
-                          className={`toggle-read-btn ${item.read ? 'read' : 'unread'}`}
-                          onClick={() => handleToggleRead(item.id)}
-                        >
-                          {item.read ? 'Marquer comme non lu' : 'Marquer comme lu'}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                
-                {pagination[feed.id] && pagination[feed.id].total_pages > 1 && (
-                  <div className="feed-pagination">
-                    <nav aria-label={`Pagination pour ${feed.title}`}>
-                      <ul className="pagination">
-                        {pagination[feed.id].current_page > 1 && (
-                          <li className="page-item">
-                            <button
-                              className="page-link"
-                              onClick={() => handlePageChange(feed.id, pagination[feed.id].current_page - 1)}
-                            >
-                              ← Précédent
-                            </button>
-                          </li>
-                        )}
-                        
-                        <li className="page-item active">
-                          <span className="page-link">
-                            Page {pagination[feed.id].current_page} sur {pagination[feed.id].total_pages}
-                          </span>
-                        </li>
-                        
-                        {pagination[feed.id].current_page < pagination[feed.id].total_pages && (
-                          <li className="page-item">
-                            <button
-                              className="page-link"
-                              onClick={() => handlePageChange(feed.id, pagination[feed.id].current_page + 1)}
-                            >
-                              Suivant →
-                            </button>
-                          </li>
-                        )}
-                      </ul>
-                    </nav>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+        <AddFeedForm
+          showAddForm={showAddForm}
+          newFeed={newFeed}
+          setNewFeed={setNewFeed}
+          handleAddFeed={handleAddFeed}
+          handleCancelAdd={() => setShowAddForm(false)}
+        />
+
+        <ActionButtons
+          showAddForm={showAddForm}
+          setShowAddForm={setShowAddForm}
+          handleFetchAll={handleFetchAll}
+          loading={loading}
+        />
+
+        <div className="feeds-container">
+          {feeds.length === 0 ? (
+            <div className="empty-state">
+              <h3>Aucun flux RSS ajouté</h3>
+              <p>Commencez par ajouter votre premier flux RSS pour voir les articles.</p>
+            </div>
+          ) : (
+            feeds.map((feed) => {
+              const feedItemsForFeed = feedItems[feed.id] || [];
+              const paginationForFeed = pagination[feed.id] || {};
+              return (
+                <FeedColumn
+                  key={feed.id}
+                  feed={feed}
+                  feedItems={feedItemsForFeed}
+                  pagination={paginationForFeed}
+                  onToggleRead={handleToggleRead}
+                  onDeleteFeed={handleDeleteFeed}
+                  onPageChange={(page) => handlePageChange(feed.id, page)}
+                />
+              );
+            })
+          )}
+        </div>
       </div>
     </div>
   );
