@@ -41,16 +41,16 @@ class Api::V1::FeedsController < Api::V1::BaseController
 
   def fetch_all
     begin
-      Rails.logger.info "🚀 Début de l'action fetch_all"
+      Rails.logger.info "Début de l'action fetch_all"
       result = RssFetcherService.fetch_all_feeds
-      Rails.logger.info "✅ Action fetch_all terminée avec succès"
+      Rails.logger.info "Action fetch_all terminée avec succès"
       render json: { 
         message: 'Récupération des flux terminée',
         processed: result[:processed],
         errors: result[:errors]
       }
     rescue => e
-      Rails.logger.error "❌ Erreur dans fetch_all: #{e.message}"
+      Rails.logger.error "Erreur dans fetch_all: #{e.message}"
       render json: { error: e.message }, status: :internal_server_error
     end
   end
